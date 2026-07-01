@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영화 리뷰 감성 분석기</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 50px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333333;
+            text-align: center;
+            font-size: 24px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #666667;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #e1e4e8;
+            border-radius: 8px;
+            resize: none;
+            font-size: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .positive {
+            background-color: #e6f4ea;
+            color: #137333;
+            border: 1px solid #c4eed0;
+        }
+        .negative {
+            background-color: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #fad2cf;
+        }
+        .confidence {
+            font-size: 14px;
+            font-weight: normal;
+            margin-top: 5px;
+            color: #555555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎬 영화 리뷰 감성 분석기</h2>
+    <p class="subtitle">인공지능 모델이 리뷰의 긍정/부정 여부를 감지합니다.</p>
+    
+    <textarea id="reviewInput" placeholder="여기에 영화 리뷰를 입력해 주세요... (예: 이 영화 진짜 시간 가는 줄 모르고 봤네요 대박 추천!)"></textarea>
+    <button onclick="analyzeSentiment()">분석하기 🚀</button>
+
+    <div id="resultBox" class="result-box">
+        <div id="sentimentText"></div>
+        <div id="confidenceText" class="confidence"></div>
+    </div>
+</div>
+
+<script>
+    async function analyzeSentiment() {
+        const reviewText = document.getElementById('reviewInput').value.trim();
+        const resultBox = document.getElementById('resultBox');
+        const sentimentText = document.getElementById('sentimentText');
+        const confidenceText = document.getElementById('confidenceText');
+
+        if (!reviewText) {
+            alert('리뷰 내용을 입력해 주세요!');
+            return;
+        }
+
+        try {
+            // Flask 서버의 /predict 주소로 비동기 POST 요청을 보냅니다.
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ review: reviewText })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // 상자 초기화 및 노출
+                resultBox.style.display = 'block';
+                resultBox.className = 'result-box'; // 클래스 초기화
+                
+                if (data.sentiment === '긍정') {
+                    resultBox.classList.add('positive');
+                    sentimentText.innerText = `😊 긍정적인 리뷰입니다!`;
+                } else {
+                    resultBox.classList.add('negative');
+                    sentimentText.innerText = `😡 부정적인 리뷰입니다.`;
+                }
+                
+                confidenceText.innerText = `신뢰도(확률): ${data.confidence}%`;
+            } else {
+                alert('서버 에러: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('서버와 통신 중 문제가 발생했습니다.');
+        }
+    }
+</script>
+
+</body>
+</html>
